@@ -13,60 +13,59 @@ public class FacturaDAO {
     }
 
     public void agregarFactura(Factura factura) throws SQLException {
-        // Incluye el nuevo campo codigo_factura
-        String sql = "INSERT INTO facturas (id_proyecto, codigo_factura, monto, fecha_emision, estado) VALUES (?, ?, ?, CURDATE(), ?)";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setInt(1, factura.getIdProyecto());
-            pstmt.setString(2, factura.getCodigo());
-            pstmt.setDouble(3, factura.getMonto());
-            pstmt.setString(4, factura.getEstado());
-            pstmt.executeUpdate();
+        String sql = "INSERT INTO facturas (id_proyecto, codigo, monto, fecha_emision, estado) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, factura.getIdProyecto());
+            ps.setString(2, factura.getCodigo());
+            ps.setDouble(3, factura.getMonto());
+            ps.setDate(4, new java.sql.Date(factura.getFechaEmision().getTime()));
+            ps.setString(5, factura.getEstado());
+            ps.executeUpdate();
         }
     }
 
     public List<Factura> obtenerTodos() throws SQLException {
         List<Factura> facturas = new ArrayList<>();
-        String sql = "SELECT * FROM facturas";
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT f.*, p.nombre as nombre_proyecto FROM facturas f JOIN proyectos p ON f.id_proyecto = p.id";
+        try (Statement st = conexion.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                // Incluye el nuevo campo codigo_factura
-                facturas.add(new Factura(
-                    rs.getInt("id_factura"),
+                Factura f = new Factura(
+                    rs.getInt("id"),
                     rs.getInt("id_proyecto"),
-                    rs.getString("codigo_factura"),
+                    rs.getString("codigo"),
                     rs.getDouble("monto"),
                     rs.getDate("fecha_emision"),
                     rs.getString("estado")
-                ));
+                );
+                f.setNombreProyecto(rs.getString("nombre_proyecto"));
+                facturas.add(f);
             }
         }
         return facturas;
     }
-    
-    public void actualizarEstadoFactura(int id, String estado) throws SQLException {
-        String sql = "UPDATE facturas SET estado = ? WHERE id_factura = ?";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setString(1, estado);
-            pstmt.setInt(2, id);
-            pstmt.executeUpdate();
+
+    public void actualizarEstadoFactura(int idFactura, String nuevoEstado) throws SQLException {
+        String sql = "UPDATE facturas SET estado = ? WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setString(1, nuevoEstado);
+            ps.setInt(2, idFactura);
+            ps.executeUpdate();
         }
     }
 
     public void eliminarFactura(int id) throws SQLException {
-        String sql = "DELETE FROM facturas WHERE id_factura = ?";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            pstmt.executeUpdate();
+        String sql = "DELETE FROM facturas WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
         }
     }
-
-    // --- MÉTODOS DEL DASHBOARD QUE FALTABAN ---
-
+    
     public int contarFacturasPendientes() throws SQLException {
         String sql = "SELECT COUNT(*) FROM facturas WHERE estado = 'Pendiente'";
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (Statement st = conexion.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
@@ -76,8 +75,8 @@ public class FacturaDAO {
 
     public double sumarIngresosDelMes() throws SQLException {
         String sql = "SELECT SUM(monto) FROM facturas WHERE estado = 'Pagada' AND MONTH(fecha_emision) = MONTH(CURDATE()) AND YEAR(fecha_emision) = YEAR(CURDATE())";
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (Statement st = conexion.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getDouble(1);
             }

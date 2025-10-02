@@ -1,6 +1,6 @@
 package modelo;
 
-import java.sql.Date;
+import java.util.Date;
 
 public class Proyecto {
     private int id;
@@ -10,6 +10,9 @@ public class Proyecto {
     private String estado;
     private Date fechaInicio;
     private Date fechaFin;
+
+    // Campo adicional para mostrar el nombre del cliente en la GUI
+    private String nombreCliente;
 
     public Proyecto(int id, String nombre, String descripcion, int idCliente, String estado, Date fechaInicio, Date fechaFin) {
         this.id = id;
@@ -29,4 +32,16 @@ public class Proyecto {
     public String getEstado() { return estado; }
     public Date getFechaInicio() { return fechaInicio; }
     public Date getFechaFin() { return fechaFin; }
+    public String getNombreCliente() { return nombreCliente; }
+
+    // Setters
+    public void setId(int id) { this.id = id; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setIdCliente(int idCliente) { this.idCliente = idCliente; }
+    public void setEstado(String estado) { this.estado = estado; }
+    public void setFechaInicio(Date fechaInicio) { this.fechaInicio = fechaInicio; }
+    public void setFechaFin(Date fechaFin) { this.fechaFin = fechaFin; }
+    public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
 }
+

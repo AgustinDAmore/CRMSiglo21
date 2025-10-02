@@ -1,54 +1,63 @@
 package gui;
 
-import dao.UsuarioDAO;
-import modelo.Usuario;
 import javax.swing.*;
 import java.awt.*;
-import java.sql.SQLException;
+import dao.UsuarioDAO;
+import modelo.Usuario;
 
 public class VentanaLogin extends JDialog {
-    private JTextField usuarioField;
-    private JPasswordField contrasenaField;
+    private JTextField txtUsuario;
+    private JPasswordField txtContrasena;
     private UsuarioDAO usuarioDAO;
     private Usuario usuarioAutenticado = null;
 
     public VentanaLogin(Frame owner, UsuarioDAO usuarioDAO) {
-        super(owner, "Inicio de Sesión", true);
+        super(owner, "Login", true);
         this.usuarioDAO = usuarioDAO;
 
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-
-        usuarioField = new JTextField(20);
-        contrasenaField = new JPasswordField(20);
-        JButton loginBtn = new JButton("Login");
-
-        gbc.gridx = 0; gbc.gridy = 0; add(new JLabel("Usuario:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0; add(usuarioField, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; add(new JLabel("Contraseña:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1; add(contrasenaField, gbc);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.anchor = GridBagConstraints.CENTER; add(loginBtn, gbc);
-
-        loginBtn.addActionListener(e -> intentarLogin());
-
-        pack();
+        setLayout(new BorderLayout(10, 10));
+        setSize(350, 180);
         setLocationRelativeTo(owner);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        panel.add(new JLabel("Usuario:"));
+        txtUsuario = new JTextField();
+        panel.add(txtUsuario);
+
+        panel.add(new JLabel("Contraseña:"));
+        txtContrasena = new JPasswordField();
+        panel.add(txtContrasena);
+
+        JButton btnLogin = new JButton("Login");
+        btnLogin.addActionListener(e -> intentarLogin());
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.addActionListener(e -> dispose());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.add(btnLogin);
+        buttonPanel.add(btnCancelar);
+
+        panel.add(buttonPanel);
+
+        add(panel, BorderLayout.CENTER);
     }
 
     private void intentarLogin() {
-        String usuario = usuarioField.getText();
-        String contrasena = new String(contrasenaField.getPassword());
+        String nombreUsuario = txtUsuario.getText();
+        String contrasena = new String(txtContrasena.getPassword());
 
-        try {
-            usuarioAutenticado = usuarioDAO.verificarUsuario(usuario, contrasena);
-            if (usuarioAutenticado != null) {
-                dispose(); // Cierra la ventana si el login es exitoso
-            } else {
-                JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos.", "Error de Login", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error de base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        // CORRECCIÓN: Se eliminó el bloque try-catch innecesario
+        usuarioAutenticado = usuarioDAO.verificarUsuario(nombreUsuario, contrasena);
+
+        if (usuarioAutenticado != null) {
+            JOptionPane.showMessageDialog(this, "Login exitoso.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos.", "Error de Login", JOptionPane.ERROR_MESSAGE);
         }
     }
 

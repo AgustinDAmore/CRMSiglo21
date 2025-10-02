@@ -13,65 +13,67 @@ public class TareaDAO {
     }
 
     public void agregarTarea(Tarea tarea) throws SQLException {
-        // Se añade el nuevo campo al INSERT
         String sql = "INSERT INTO tareas (id_proyecto, id_empleado, descripcion, fecha_limite, estado) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setInt(1, tarea.getIdProyecto());
-            pstmt.setInt(2, tarea.getIdEmpleado()); // Añadir id_empleado
-            pstmt.setString(3, tarea.getDescripcion());
-            pstmt.setDate(4, tarea.getFechaLimite());
-            pstmt.setString(5, tarea.getEstado());
-            pstmt.executeUpdate();
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, tarea.getIdProyecto());
+            ps.setInt(2, tarea.getIdEmpleado());
+            ps.setString(3, tarea.getDescripcion());
+            ps.setDate(4, tarea.getFechaLimite() != null ? new java.sql.Date(tarea.getFechaLimite().getTime()) : null);
+            ps.setString(5, tarea.getEstado());
+            ps.executeUpdate();
         }
     }
 
-    public List<Tarea> obtenerTodas() throws SQLException {
+    public List<Tarea> obtenerTodos() throws SQLException {
         List<Tarea> tareas = new ArrayList<>();
-        String sql = "SELECT * FROM tareas";
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT t.*, p.nombre as nombre_proyecto, e.nombre as nombre_empleado " +
+                     "FROM tareas t " +
+                     "JOIN proyectos p ON t.id_proyecto = p.id " +
+                     "JOIN empleados e ON t.id_empleado = e.id";
+        try (Statement st = conexion.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                // Se llama al constructor actualizado
-                tareas.add(new Tarea(
-                    rs.getInt("id_tarea"),
+                Tarea t = new Tarea(
+                    rs.getInt("id"),
                     rs.getInt("id_proyecto"),
-                    rs.getInt("id_empleado"), // Obtener id_empleado
+                    rs.getInt("id_empleado"),
                     rs.getString("descripcion"),
                     rs.getDate("fecha_limite"),
                     rs.getString("estado")
-                ));
+                );
+                t.setNombreProyecto(rs.getString("nombre_proyecto"));
+                t.setNombreEmpleado(rs.getString("nombre_empleado"));
+                tareas.add(t);
             }
         }
         return tareas;
     }
 
     public void actualizarTarea(Tarea tarea) throws SQLException {
-        // Se añade el nuevo campo al UPDATE
-        String sql = "UPDATE tareas SET id_proyecto = ?, id_empleado = ?, descripcion = ?, fecha_limite = ?, estado = ? WHERE id_tarea = ?";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setInt(1, tarea.getIdProyecto());
-            pstmt.setInt(2, tarea.getIdEmpleado()); // Actualizar id_empleado
-            pstmt.setString(3, tarea.getDescripcion());
-            pstmt.setDate(4, tarea.getFechaLimite());
-            pstmt.setString(5, tarea.getEstado());
-            pstmt.setInt(6, tarea.getId());
-            pstmt.executeUpdate();
+        String sql = "UPDATE tareas SET id_proyecto = ?, id_empleado = ?, descripcion = ?, fecha_limite = ?, estado = ? WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, tarea.getIdProyecto());
+            ps.setInt(2, tarea.getIdEmpleado());
+            ps.setString(3, tarea.getDescripcion());
+            ps.setDate(4, tarea.getFechaLimite() != null ? new java.sql.Date(tarea.getFechaLimite().getTime()) : null);
+            ps.setString(5, tarea.getEstado());
+            ps.setInt(6, tarea.getId());
+            ps.executeUpdate();
         }
     }
 
     public void eliminarTarea(int id) throws SQLException {
-        String sql = "DELETE FROM tareas WHERE id_tarea = ?";
-        try (PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            pstmt.executeUpdate();
+        String sql = "DELETE FROM tareas WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
         }
     }
-
+    
     public int contarTareasPorVencer() throws SQLException {
-        // Cuenta tareas pendientes cuya fecha límite es en los próximos 7 días
-        String sql = "SELECT COUNT(*) FROM tareas WHERE estado = 'Pendiente' AND fecha_limite BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT COUNT(*) FROM tareas WHERE estado != 'Completada' AND fecha_limite BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+        try (Statement st = conexion.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
